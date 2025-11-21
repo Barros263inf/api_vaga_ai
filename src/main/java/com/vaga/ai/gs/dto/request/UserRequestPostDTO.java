@@ -1,5 +1,9 @@
 package com.vaga.ai.gs.dto.request;
 
+import com.vaga.ai.gs.model.enums.Role;
+import jakarta.persistence.Column;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -19,6 +23,10 @@ public record UserRequestPostDTO(
         String password,
 
         @Pattern(regexp = "\\d{10,14}", message = "{user.phone.invalid}")
-        String phone
+        String phone,
+
+        @Enumerated(EnumType.STRING)
+        Role role
+
 ) {
 }

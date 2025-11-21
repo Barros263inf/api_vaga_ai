@@ -1,4 +1,9 @@
 package com.vaga.ai.gs.dto.messaging;
 
-public record EmailDTO() {
-}
+import java.io.Serializable;
+
+public record EmailDTO(
+        String to,
+        String subject,
+        String body
+) implements Serializable {}

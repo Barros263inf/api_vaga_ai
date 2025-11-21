@@ -22,7 +22,7 @@ import java.util.List;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "usuario")
+@Table(name = "TB_USUARIOS")
 public class User implements Serializable, UserDetails {
 
     @Id

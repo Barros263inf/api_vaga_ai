@@ -1,0 +1,45 @@
+services:
+  # SERVIÇO 1: BANCO DE DADOS (ORACLE)
+  oracle-db:
+    image: gvenzl/oracle-xe:21-slim
+    container_name: oracle-container
+    environment:
+      - ORACLE_PASSWORD=fiap
+      - ORACLE_DATABASE=xe
+    ports:
+      - "1521:1521"
+    networks:
+      - minha-rede
+
+  # SERVIÇO 2: MENSAGERIA (RABBITMQ)
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq-container
+    ports:
+      - "5672:5672"   # Porta de comunicação da API
+      - "15672:15672" # Painel de gestão Web
+    networks:
+      - minha-rede
+
+  # SERVIÇO 3: SUA API SPRING BOOT
+  api-app:
+    build: .  # Constrói a imagem baseada no Dockerfile da pasta atual
+    container_name: api-vaga-ai
+    ports:
+      - "8080:8080"
+    depends_on:
+      - oracle-db
+      - rabbitmq
+    environment:
+      # AQUI ESTÁ O SEGREDO: Sobrescrevemos as configurações do application.properties
+      # Em vez de 'localhost', usamos o NOME DO SERVIÇO definido acima
+      - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@oracle-db:1521/XEPDB1
+      - SPRING_DATASOURCE_USERNAME=system
+      - SPRING_DATASOURCE_PASSWORD=fiap
+      - SPRING_RABBITMQ_HOST=rabbitmq
+    networks:
+      - minha-rede
+
+networks:
+  minha-rede:
+    driver: bridge

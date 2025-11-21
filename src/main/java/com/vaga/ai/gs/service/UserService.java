@@ -1,10 +1,12 @@
 package com.vaga.ai.gs.service;
 
+import com.vaga.ai.gs.dto.messaging.EmailDTO;
 import com.vaga.ai.gs.dto.request.UserRequestPostDTO;
 import com.vaga.ai.gs.dto.request.UserRequestUpdateDTO;
 import com.vaga.ai.gs.dto.response.UserResponseDTO;
 import com.vaga.ai.gs.exception.BusinessRuleException;
 import com.vaga.ai.gs.exception.ResourceNotFoundException;
+import com.vaga.ai.gs.messaging.EmailProducer;
 import com.vaga.ai.gs.model.User;
 import com.vaga.ai.gs.model.enums.Role;
 import com.vaga.ai.gs.repository.UserRepository;
@@ -28,6 +30,9 @@ public class UserService {
 
     @Autowired
     private MessageSource messageSource;
+
+    @Autowired
+    private EmailProducer emailProducer;
 
     private String getMessage(String key, Object... args) {
         return messageSource.getMessage(key, args, LocaleContextHolder.getLocale());
@@ -58,9 +63,21 @@ public class UserService {
         String encryptedPassword = passwordEncoder.encode(newUser.password());
         user.setPassword(encryptedPassword);
 
-        user.setRole(Role.USER);
+        user.setRole(newUser.role());
 
         User userSaved = userRepository.save(user);
+
+        try {
+            EmailDTO email = new EmailDTO(
+                    userSaved.getEmail(),
+                    "Bem-vindo ao Vaga AI!",
+                    "Olá " + userSaved.getName() + ", o seu cadastro foi realizado com sucesso!"
+            );
+            emailProducer.sendEmailMessage(email);
+        } catch (Exception e) {
+            // Log apenas, não queremos falhar o cadastro se a fila estiver fora
+            System.err.println("Falha ao enviar notificação: " + e.getMessage());
+        }
 
         return UserResponseDTO.fromEntity(userSaved);
     }
