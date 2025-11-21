@@ -2,13 +2,8 @@ package com.vaga.ai.gs.service;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.exceptions.JWTCreationException;
-import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.vaga.ai.gs.model.User;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.MessageSource;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -21,13 +16,6 @@ public class TokenService {
     @Value("${spring.security.token.secret}")
     private String secret;
 
-    @Autowired
-    private MessageSource messageSource;
-
-    private String getMessage(String key, Object... args) {
-        return messageSource.getMessage(key, args, LocaleContextHolder.getLocale());
-    }
-
     private Instant genExpirationDate() {
         // Expira em 2 horas - fuso horário UTC-3 Brasil/SP)
         return LocalDateTime.now().plusHours(2)
@@ -35,29 +23,21 @@ public class TokenService {
     }
 
     public String generateToken(User user) {
-        try {
-            Algorithm algorithm = Algorithm.HMAC256(secret);
-            String token = JWT.create()
-                    .withIssuer("auth-api")
-                    .withSubject(user.getEmail())
-                    .withExpiresAt(genExpirationDate())
-                    .sign(algorithm);
-            return token;
-        } catch (JWTCreationException exception) {
-            throw new RuntimeException(getMessage("token.build.error", exception));
-        }
+        Algorithm algorithm = Algorithm.HMAC256(secret);
+        String token = JWT.create()
+                .withIssuer("auth-api")
+                .withSubject(user.getEmail())
+                .withExpiresAt(genExpirationDate())
+                .sign(algorithm);
+        return token;
     }
 
     public String validateToken(String token) {
-        try {
-            Algorithm algorithm = Algorithm.HMAC256(secret);
-            return JWT.require(algorithm)
-                    .withIssuer("auth-api")
-                    .build()
-                    .verify(token)
-                    .getSubject();
-        } catch (JWTVerificationException exception) {
-            throw new RuntimeException(getMessage("token.verify.error", exception));
-        }
+        Algorithm algorithm = Algorithm.HMAC256(secret);
+        return JWT.require(algorithm)
+                .withIssuer("auth-api")
+                .build()
+                .verify(token)
+                .getSubject();
     }
 }
