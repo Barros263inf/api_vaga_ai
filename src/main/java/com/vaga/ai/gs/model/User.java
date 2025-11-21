@@ -41,7 +41,7 @@ public class User implements Serializable, UserDetails {
     private String email;
 
     @NotBlank(message = "{user.pass.required}")
-    @Size(min = 8, max = 12, message = "{user.pass.short}")
+    @Size(min = 8, max = 255, message = "{user.pass.short}")
     @Column(name = "password", nullable = false)
     private String password;
 
