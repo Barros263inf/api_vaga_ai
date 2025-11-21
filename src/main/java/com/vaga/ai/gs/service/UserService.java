@@ -73,34 +73,31 @@ public class UserService {
     }
 
     @Transactional
-    public User update (Long id, User updatedUser) {
+    public UserResponseDTO update (Long id, UserRequestDTO updatedUser) {
 
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         getMessage("user.not.found", id)
                 ));
 
-        if (!existingUser.getEmail().equals(updatedUser.getEmail()) &&
-                userRepository.existsByEmail(updatedUser.getEmail())) {
-
+        if (!existingUser.getEmail().equals(updatedUser.email()) && userRepository.existsByEmail(updatedUser.email())) {
             throw new BusinessRuleException(getMessage("user.email.duplicate"));
         }
 
-        existingUser.setName(updatedUser.getName());
-        existingUser.setPhone(updatedUser.getPhone());
-        existingUser.setEmail(updatedUser.getEmail());
-        existingUser.setPassword(updatedUser.getPassword());
-        existingUser.setRole(updatedUser.getRole());
+        existingUser.setName(updatedUser.name());
+        existingUser.setPhone(updatedUser.phone());
+        existingUser.setEmail(updatedUser.email());
+        existingUser.setPassword(updatedUser.password());
 
-        if (updatedUser.getPassword() != null && !updatedUser.getPassword().isBlank()) {
-
-            // TODO: Criptografar a senha antes de salvar (Requisito Security)
-            // usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
-            // Lembre-se: aqui entraria o encode da senha novamente
-
-            existingUser.setPassword(updatedUser.getPassword());
+        if (updatedUser.password() != null && !updatedUser.password().isBlank()) {
+            String encryptedPassword = passwordEncoder.encode(updatedUser.password());
+            existingUser.setPassword(encryptedPassword);
         }
 
-        return userRepository.save(existingUser);
+        User userAttach = userRepository.save(existingUser);
+
+        UserResponseDTO userResponseDTO = new UserResponseDTO(userAttach.getId(),userAttach.getName(), userAttach.getEmail());
+
+        return userResponseDTO;
     }
 }
