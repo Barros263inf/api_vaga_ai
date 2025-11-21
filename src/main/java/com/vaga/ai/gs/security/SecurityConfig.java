@@ -1,6 +1,5 @@
 package com.vaga.ai.gs.security;
 
-import com.vaga.ai.gs.security.SecurityFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,7 +17,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -43,9 +41,11 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Rotas Publicas
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
                         // Rotas Restritas (ADMINS)
                         .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/users").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/users/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/users").hasRole("ADMIN")
                         // Rotas Com Autenticação (USER e ADMIN)
                         .anyRequest().authenticated()

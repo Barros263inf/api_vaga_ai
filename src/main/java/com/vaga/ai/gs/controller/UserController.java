@@ -1,6 +1,7 @@
 package com.vaga.ai.gs.controller;
 
-import com.vaga.ai.gs.dto.request.UserRequestDTO;
+import com.vaga.ai.gs.dto.request.UserRequestPostDTO;
+import com.vaga.ai.gs.dto.request.UserRequestUpdateDTO;
 import com.vaga.ai.gs.dto.response.UserResponseDTO;
 import com.vaga.ai.gs.model.User;
 import com.vaga.ai.gs.service.UserService;
@@ -39,7 +40,7 @@ public class UserController {
 
     @PostMapping
     public ResponseEntity<UserResponseDTO> create(
-            @RequestBody @Valid UserRequestDTO dto,
+            @RequestBody @Valid UserRequestPostDTO dto,
             UriComponentsBuilder uriComponentsBuilder
     ) {
         UserResponseDTO userSaved = userService.save(dto);
@@ -52,7 +53,7 @@ public class UserController {
     @PutMapping("/{id}")
     public ResponseEntity<UserResponseDTO> update(
             @PathVariable Long id,
-            @RequestBody @Valid UserRequestDTO newUser
+            @RequestBody @Valid UserRequestUpdateDTO newUser
     ) {
         UserResponseDTO userUpdated = userService.update(id, newUser);
         return ResponseEntity.ok(userUpdated);

@@ -1,6 +1,7 @@
 package com.vaga.ai.gs.service;
 
-import com.vaga.ai.gs.dto.request.UserRequestDTO;
+import com.vaga.ai.gs.dto.request.UserRequestPostDTO;
+import com.vaga.ai.gs.dto.request.UserRequestUpdateDTO;
 import com.vaga.ai.gs.dto.response.UserResponseDTO;
 import com.vaga.ai.gs.exception.BusinessRuleException;
 import com.vaga.ai.gs.exception.ResourceNotFoundException;
@@ -36,7 +37,7 @@ public class UserService {
         return userRepository.findAll(pageable);
     }
 
-    public User findById (Long id) {
+    public User findById(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         getMessage("user.not.found", id)
@@ -44,17 +45,17 @@ public class UserService {
     }
 
     @Transactional
-    public UserResponseDTO save (UserRequestDTO dto) {
-        if (userRepository.existsByEmail(dto.email())) {
-            throw new BusinessRuleException(getMessage("{user.email.duplicate}"));
+    public UserResponseDTO save(UserRequestPostDTO newUser) {
+        if (userRepository.existsByEmail(newUser.email())) {
+            throw new BusinessRuleException(getMessage("{user.email.duplicate}", newUser, LocaleContextHolder.getLocale()));
         }
 
         User user = new User();
-        user.setName(dto.name());
-        user.setEmail(dto.email());
-        user.setPhone(dto.phone());
+        user.setName(newUser.name());
+        user.setEmail(newUser.email());
+        user.setPhone(newUser.phone());
 
-        String encryptedPassword = passwordEncoder.encode(dto.password());
+        String encryptedPassword = passwordEncoder.encode(newUser.password());
         user.setPassword(encryptedPassword);
 
         user.setRole(Role.USER);
@@ -65,7 +66,7 @@ public class UserService {
     }
 
     @Transactional
-    public void delete (Long id) {
+    public void delete(Long id) {
         if (!userRepository.existsById(id)) {
             throw new ResourceNotFoundException(getMessage("{user.not.found}", id));
         }
@@ -73,21 +74,29 @@ public class UserService {
     }
 
     @Transactional
-    public UserResponseDTO update (Long id, UserRequestDTO updatedUser) {
+    public UserResponseDTO update(Long id, UserRequestUpdateDTO updatedUser) {
 
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         getMessage("user.not.found", id)
                 ));
 
-        if (!existingUser.getEmail().equals(updatedUser.email()) && userRepository.existsByEmail(updatedUser.email())) {
-            throw new BusinessRuleException(getMessage("user.email.duplicate"));
+        if (updatedUser.name() != null && !updatedUser.name().isBlank()) {
+            existingUser.setName(updatedUser.name());
         }
 
-        existingUser.setName(updatedUser.name());
-        existingUser.setPhone(updatedUser.phone());
-        existingUser.setEmail(updatedUser.email());
-        existingUser.setPassword(updatedUser.password());
+        if (updatedUser.email() != null && !updatedUser.email().isBlank()) {
+            if (existingUser.getEmail().equals(updatedUser.email())) {
+                if (userRepository.existsByEmail(updatedUser.email())) {
+                    throw new BusinessRuleException(getMessage("user.email.duplicate"));
+                }
+            }
+            existingUser.setEmail(updatedUser.email());
+        }
+
+        if (updatedUser.phone() != null) {
+            existingUser.setPhone(updatedUser.phone());
+        }
 
         if (updatedUser.password() != null && !updatedUser.password().isBlank()) {
             String encryptedPassword = passwordEncoder.encode(updatedUser.password());
@@ -96,8 +105,6 @@ public class UserService {
 
         User userAttach = userRepository.save(existingUser);
 
-        UserResponseDTO userResponseDTO = new UserResponseDTO(userAttach.getId(),userAttach.getName(), userAttach.getEmail());
-
-        return userResponseDTO;
+        return UserResponseDTO.fromEntity(userAttach);
     }
 }

@@ -1,9 +1,12 @@
 package com.vaga.ai.gs.controller;
 
 import com.vaga.ai.gs.dto.request.LoginRequestDTO;
+import com.vaga.ai.gs.dto.request.UserRequestPostDTO;
 import com.vaga.ai.gs.dto.response.TokenResponseDTO;
+import com.vaga.ai.gs.dto.response.UserResponseDTO;
 import com.vaga.ai.gs.model.User;
 import com.vaga.ai.gs.service.TokenService;
+import com.vaga.ai.gs.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -19,10 +22,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     @Autowired
-    private AuthenticationManager authenticationManager;
+    private UserService userService;
 
     @Autowired
     private TokenService tokenService;
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
 
     @PostMapping("/login")
     public ResponseEntity login(@RequestBody @Valid LoginRequestDTO data) {
@@ -33,5 +39,11 @@ public class AuthController {
         var token = tokenService.generateToken((User) auth.getPrincipal());
 
         return ResponseEntity.ok(new TokenResponseDTO(token));
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity register( @RequestBody @Valid UserRequestPostDTO data) {
+        UserResponseDTO userRegistered = userService.save(data);
+        return ResponseEntity.ok(userRegistered);
     }
 }
