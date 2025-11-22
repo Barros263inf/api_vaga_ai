@@ -1,7 +1,9 @@
 package com.vaga.ai.gs.service;
 
+import com.vaga.ai.gs.dto.messaging.EmailDTO;
 import com.vaga.ai.gs.dto.request.FilterRequestPostDTO;
 import com.vaga.ai.gs.dto.request.FilterRequestUpdateDTO;
+import com.vaga.ai.gs.event.NotificationEvent;
 import com.vaga.ai.gs.exception.ResourceNotFoundException;
 import com.vaga.ai.gs.exception.BusinessRuleException;
 import com.vaga.ai.gs.model.Filter;
@@ -11,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
@@ -26,6 +29,9 @@ public class FilterService {
 
     @Autowired
     private MessageSource messageSource;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
 
     private String getMessage(String key, Object... args) {
         return messageSource.getMessage(key, args, LocaleContextHolder.getLocale());
@@ -53,6 +59,14 @@ public class FilterService {
         filter.setSalaryMax(dto.salaryMax());
         filter.setRemotePreference(dto.remotePreference());
         filter.setExperienceLevel(dto.experienceLevel());
+
+        EmailDTO email = new EmailDTO(
+                loggedUser.getEmail(),
+                "Novo Filtro Criado",
+                "Você criou o filtro: " + filter.getTitle()
+        );
+
+        eventPublisher.publishEvent(new NotificationEvent(this, email));
 
         return filterRepository.save(filter);
     }
