@@ -3,15 +3,16 @@ package com.vaga.ai.gs.service;
 import com.vaga.ai.gs.dto.messaging.EmailDTO;
 import com.vaga.ai.gs.dto.request.UserRequestPostDTO;
 import com.vaga.ai.gs.dto.request.UserRequestUpdateDTO;
-import com.vaga.ai.gs.dto.response.UserResponseDTO;
 import com.vaga.ai.gs.exception.BusinessRuleException;
 import com.vaga.ai.gs.exception.ResourceNotFoundException;
 import com.vaga.ai.gs.messaging.EmailProducer;
 import com.vaga.ai.gs.model.User;
-import com.vaga.ai.gs.model.enums.Role;
 import com.vaga.ai.gs.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
@@ -42,7 +43,9 @@ public class UserService {
         return userRepository.findAll(pageable);
     }
 
+    @Cacheable(value = "users", key = "#id")
     public User findById(Long id) {
+        System.out.println("🔎 Buscando no banco de dados...");
         return userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         getMessage("user.not.found", id)
@@ -50,7 +53,7 @@ public class UserService {
     }
 
     @Transactional
-    public UserResponseDTO save(UserRequestPostDTO newUser) {
+    public User save(UserRequestPostDTO newUser) {
         if (userRepository.existsByEmail(newUser.email())) {
             throw new BusinessRuleException(getMessage("{user.email.duplicate}", newUser, LocaleContextHolder.getLocale()));
         }
@@ -75,14 +78,14 @@ public class UserService {
             );
             emailProducer.sendEmailMessage(email);
         } catch (Exception e) {
-            // Log apenas, não queremos falhar o cadastro se a fila estiver fora
             System.err.println("Falha ao enviar notificação: " + e.getMessage());
         }
 
-        return UserResponseDTO.fromEntity(userSaved);
+        return userSaved;
     }
 
     @Transactional
+    @CacheEvict(value = "users", key = "#id")
     public void delete(Long id) {
         if (!userRepository.existsById(id)) {
             throw new ResourceNotFoundException(getMessage("{user.not.found}", id));
@@ -91,7 +94,8 @@ public class UserService {
     }
 
     @Transactional
-    public UserResponseDTO update(Long id, UserRequestUpdateDTO updatedUser) {
+    @CachePut(value = "users", key = "#id")
+    public User update(Long id, UserRequestUpdateDTO updatedUser) {
 
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -120,8 +124,6 @@ public class UserService {
             existingUser.setPassword(encryptedPassword);
         }
 
-        User userAttach = userRepository.save(existingUser);
-
-        return UserResponseDTO.fromEntity(userAttach);
+        return userRepository.save(existingUser);
     }
 }

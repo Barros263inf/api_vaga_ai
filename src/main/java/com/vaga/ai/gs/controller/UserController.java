@@ -24,21 +24,17 @@ public class UserController {
     UserService userService;
 
     @GetMapping
-    // MUDANÇA 1: Retorna Page<UserResponseDTO> em vez de Page<User>
     public ResponseEntity<Page<UserResponseDTO>> list(
             @PageableDefault(size = 10, sort = "name")
             Pageable pageable
     ) {
         Page<User> page = userService.findAll(pageable);
-        // MUDANÇA 2: Converte a entidade para DTO
         return ResponseEntity.ok(page.map(UserResponseDTO::fromEntity));
     }
 
     @GetMapping("/{id}")
-    // MUDANÇA 3: Retorna UserResponseDTO em vez de User
     public ResponseEntity<UserResponseDTO> search(@PathVariable Long id) {
         User user = userService.findById(id);
-        // MUDANÇA 4: Converte a entidade para DTO
         return ResponseEntity.ok(UserResponseDTO.fromEntity(user));
     }
 
@@ -47,11 +43,11 @@ public class UserController {
             @RequestBody @Valid UserRequestPostDTO dto,
             UriComponentsBuilder uriComponentsBuilder
     ) {
-        UserResponseDTO userSaved = userService.save(dto);
+        User userSaved = userService.save(dto);
 
         URI uri = uriComponentsBuilder.path("api/users/{id}")
-                .buildAndExpand(userSaved.id()).toUri();
-        return ResponseEntity.created(uri).body(userSaved);
+                .buildAndExpand(userSaved.getId()).toUri();
+        return ResponseEntity.created(uri).body(UserResponseDTO.fromEntity(userSaved));
     }
 
     @PutMapping("/{id}")
@@ -59,8 +55,8 @@ public class UserController {
             @PathVariable Long id,
             @RequestBody @Valid UserRequestUpdateDTO newUser
     ) {
-        UserResponseDTO userUpdated = userService.update(id, newUser);
-        return ResponseEntity.ok(userUpdated);
+        User userUpdated = userService.update(id, newUser);
+        return ResponseEntity.ok(UserResponseDTO.fromEntity(userUpdated));
     }
 
     @DeleteMapping("/{id}")

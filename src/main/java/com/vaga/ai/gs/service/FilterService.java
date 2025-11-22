@@ -2,13 +2,15 @@ package com.vaga.ai.gs.service;
 
 import com.vaga.ai.gs.dto.request.FilterRequestPostDTO;
 import com.vaga.ai.gs.dto.request.FilterRequestUpdateDTO;
-import com.vaga.ai.gs.dto.response.FilterResponseDTO;
 import com.vaga.ai.gs.exception.ResourceNotFoundException;
 import com.vaga.ai.gs.exception.BusinessRuleException;
 import com.vaga.ai.gs.model.Filter;
 import com.vaga.ai.gs.model.User;
 import com.vaga.ai.gs.repository.FilterRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
@@ -29,19 +31,19 @@ public class FilterService {
         return messageSource.getMessage(key, args, LocaleContextHolder.getLocale());
     }
 
-    public Page<FilterResponseDTO> findAll(User loggedUser, Pageable pageable) {
+    public Page<Filter> findAll(User loggedUser, Pageable pageable) {
 
-        return filterRepository.findAllByUser(loggedUser, pageable)
-                .map(FilterResponseDTO::fromEntity);
+        return filterRepository.findAllByUser(loggedUser, pageable);
     }
 
-    public FilterResponseDTO findById(Long id, User loggedUser) {
-        Filter filter = findFilterOwnedByUser(id, loggedUser);
-        return FilterResponseDTO.fromEntity(filter);
+    @Cacheable(value = "filters", key = "#id")
+    public Filter findById(Long id, User loggedUser) {
+        System.out.println("🔎 Buscando no banco de dados...");
+        return findFilterOwnedByUser(id, loggedUser);
     }
 
     @Transactional
-    public FilterResponseDTO save(FilterRequestPostDTO dto, User loggedUser) {
+    public Filter save(FilterRequestPostDTO dto, User loggedUser) {
         Filter filter = new Filter();
         filter.setUser(loggedUser);
         filter.setTitle(dto.title());
@@ -52,11 +54,12 @@ public class FilterService {
         filter.setRemotePreference(dto.remotePreference());
         filter.setExperienceLevel(dto.experienceLevel());
 
-        return FilterResponseDTO.fromEntity(filterRepository.save(filter));
+        return filterRepository.save(filter);
     }
 
     @Transactional
-    public FilterResponseDTO update(Long id, FilterRequestUpdateDTO dto, User loggedUser) {
+    @CachePut(value = "filters", key = "#id")
+    public Filter update(Long id, FilterRequestUpdateDTO dto, User loggedUser) {
         Filter filter = findFilterOwnedByUser(id, loggedUser);
 
         if (dto.title() != null && !dto.title().isBlank()) filter.setTitle(dto.title());
@@ -68,10 +71,11 @@ public class FilterService {
         if (dto.experienceLevel() != null && !dto.experienceLevel().isBlank())
             filter.setExperienceLevel(dto.experienceLevel());
 
-        return FilterResponseDTO.fromEntity(filterRepository.save(filter));
+        return filterRepository.save(filter);
     }
 
     @Transactional
+    @CacheEvict(value = "filters", key = "#id")
     public void delete(Long id, User loggedUser) {
         Filter filter = findFilterOwnedByUser(id, loggedUser);
         filterRepository.delete(filter);

@@ -2,6 +2,7 @@ package com.vaga.ai.gs.controller;
 
 import com.vaga.ai.gs.dto.request.JobRequestDTO;
 import com.vaga.ai.gs.dto.response.JobResponseDTO;
+import com.vaga.ai.gs.model.Job;
 import com.vaga.ai.gs.model.User;
 import com.vaga.ai.gs.service.JobService;
 import jakarta.validation.Valid;
@@ -28,7 +29,7 @@ public class JobController {
             @AuthenticationPrincipal User loggedUser,
             @PageableDefault(size = 10, sort = "savedAt") Pageable pageable
     ) {
-        return ResponseEntity.ok(jobService.findAll(loggedUser, pageable));
+        return ResponseEntity.ok(jobService.findAll(loggedUser, pageable).map(JobResponseDTO::fromEntity));
     }
 
     @GetMapping("/{id}")
@@ -36,7 +37,7 @@ public class JobController {
             @PathVariable Long id,
             @AuthenticationPrincipal User loggedUser
     ) {
-        return ResponseEntity.ok(jobService.findById(id, loggedUser));
+        return ResponseEntity.ok(JobResponseDTO.fromEntity(jobService.findById(id, loggedUser)));
     }
 
     @PostMapping
@@ -45,9 +46,9 @@ public class JobController {
             @AuthenticationPrincipal User loggedUser,
             UriComponentsBuilder uriBuilder
     ) {
-        JobResponseDTO saved = jobService.save(dto, loggedUser);
-        URI uri = uriBuilder.path("/api/jobs/{id}").buildAndExpand(saved.id()).toUri();
-        return ResponseEntity.created(uri).body(saved);
+        Job saved = jobService.save(dto, loggedUser);
+        URI uri = uriBuilder.path("/api/jobs/{id}").buildAndExpand(saved.getId()).toUri();
+        return ResponseEntity.created(uri).body(JobResponseDTO.fromEntity(saved));
     }
 
     @DeleteMapping("/{id}")

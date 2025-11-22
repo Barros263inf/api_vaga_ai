@@ -29,7 +29,7 @@ public class FilterController {
             @AuthenticationPrincipal User loggedUser,
             @PageableDefault(size = 10, sort = "createdAt") Pageable pageable
     ) {
-        return ResponseEntity.ok(filterService.findAll(loggedUser, pageable));
+        return ResponseEntity.ok(filterService.findAll(loggedUser, pageable).map(FilterResponseDTO::fromEntity));
     }
 
     @GetMapping("/{id}")
@@ -37,7 +37,7 @@ public class FilterController {
             @PathVariable Long id,
             @AuthenticationPrincipal User loggedUser
     ) {
-        return ResponseEntity.ok(filterService.findById(id, loggedUser));
+        return ResponseEntity.ok(FilterResponseDTO.fromEntity(filterService.findById(id, loggedUser)));
     }
 
     @PostMapping
@@ -46,7 +46,7 @@ public class FilterController {
             @AuthenticationPrincipal User loggedUser,
             UriComponentsBuilder uriBuilder
     ) {
-        FilterResponseDTO saved = filterService.save(dto, loggedUser);
+        FilterResponseDTO saved = FilterResponseDTO.fromEntity(filterService.save(dto, loggedUser));
         URI uri = uriBuilder.path("/api/filters/{id}").buildAndExpand(saved.id()).toUri();
         return ResponseEntity.created(uri).body(saved);
     }
@@ -57,7 +57,7 @@ public class FilterController {
             @RequestBody @Valid FilterRequestUpdateDTO dto,
             @AuthenticationPrincipal User loggedUser
     ) {
-        return ResponseEntity.ok(filterService.update(id, dto, loggedUser));
+        return ResponseEntity.ok(FilterResponseDTO.fromEntity(filterService.update(id, dto, loggedUser)));
     }
 
     @DeleteMapping("/{id}")

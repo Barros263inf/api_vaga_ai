@@ -21,7 +21,16 @@ services:
     networks:
       - minha-rede
 
-  # SERVIÇO 3: SUA API SPRING BOOT
+  # SERVIÇO 3: REDIS (CACHE)
+  redis-cache:
+    image: redis:alpine
+    container_name: redis-container
+    ports:
+      - "6379:6379"
+    networks:
+      - minha-rede
+
+  # SERVIÇO 4: SUA API SPRING BOOT
   api-app:
     build: .  # Constrói a imagem baseada no Dockerfile da pasta atual
     container_name: api-vaga-ai
@@ -30,6 +39,7 @@ services:
     depends_on:
       - oracle-db
       - rabbitmq
+      - redis-cache
     environment:
       # AQUI ESTÁ O SEGREDO: Sobrescrevemos as configurações do application.properties
       # Em vez de 'localhost', usamos o NOME DO SERVIÇO definido acima
@@ -37,6 +47,8 @@ services:
       - SPRING_DATASOURCE_USERNAME=system
       - SPRING_DATASOURCE_PASSWORD=fiap
       - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_DATA_REDIS_HOST=redis-cache
+      - SPRING_DATA_REDIS_PORT=6379
     networks:
       - minha-rede
 
