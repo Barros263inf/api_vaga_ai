@@ -26,6 +26,14 @@ public class OpenApiConfig {
                         .title("API Vaga AI")
                         .version("1.0")
                         .description("API para gerenciamento de vagas e currículos com Inteligência Artificial")
-                        .license(new License().name("Apache 2.0").url("http://springdoc.org")));
+                        .license(new License().name("Apache 2.0").url("http://springdoc.org")))
+                // Configuração para o botão "Authorize" funcionar com JWT no Swagger
+                .addSecurityItem(new SecurityRequirement().addList("bearer-key"))
+                .components(new io.swagger.v3.oas.models.Components()
+                        .addSecuritySchemes("bearer-key",
+                                new SecurityScheme()
+                                        .type(SecurityScheme.Type.HTTP)
+                                        .scheme("bearer")
+                                        .bearerFormat("JWT")));
     }
 }
