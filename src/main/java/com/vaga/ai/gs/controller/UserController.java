@@ -24,18 +24,18 @@ public class UserController {
     UserService userService;
 
     @GetMapping
-    public ResponseEntity<Page<User>> list(
+    public ResponseEntity<Page<UserResponseDTO>> list(
             @PageableDefault(size = 10, sort = "name")
             Pageable pageable
     ) {
         Page<User> page = userService.findAll(pageable);
-        return ResponseEntity.ok(page);
+        return ResponseEntity.ok(page.map(UserResponseDTO::fromEntity));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<User> search(@PathVariable Long id) {
+    public ResponseEntity<UserResponseDTO> search(@PathVariable Long id) {
         User user = userService.findById(id);
-        return ResponseEntity.ok(user);
+        return ResponseEntity.ok(UserResponseDTO.fromEntity(user));
     }
 
     @PostMapping
