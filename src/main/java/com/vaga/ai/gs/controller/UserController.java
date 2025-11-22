@@ -24,17 +24,21 @@ public class UserController {
     UserService userService;
 
     @GetMapping
+    // MUDANÇA 1: Retorna Page<UserResponseDTO> em vez de Page<User>
     public ResponseEntity<Page<UserResponseDTO>> list(
             @PageableDefault(size = 10, sort = "name")
             Pageable pageable
     ) {
         Page<User> page = userService.findAll(pageable);
+        // MUDANÇA 2: Converte a entidade para DTO
         return ResponseEntity.ok(page.map(UserResponseDTO::fromEntity));
     }
 
     @GetMapping("/{id}")
+    // MUDANÇA 3: Retorna UserResponseDTO em vez de User
     public ResponseEntity<UserResponseDTO> search(@PathVariable Long id) {
         User user = userService.findById(id);
+        // MUDANÇA 4: Converte a entidade para DTO
         return ResponseEntity.ok(UserResponseDTO.fromEntity(user));
     }
 
